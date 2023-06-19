@@ -1,9 +1,12 @@
 import { time } from "console";
-import { CSSProperties, useMemo } from "react"
-import timeZones from "./time-zones";
+import { CSSProperties, useMemo, useState } from "react"
+import timeZones, { timeZone } from "./time-zones";
+import Input from "./common/Input";
+import { InputResult } from "../model/InputResult";
+import { StatusType } from "../model/StatusType";
 type Props = {
     time: Date,
-    place: string
+    place: string,
 }
 
 const Clock: React.FC<Props> = ({ time, place }) => {
@@ -12,30 +15,45 @@ const Clock: React.FC<Props> = ({ time, place }) => {
         flexDirection: "column", alignItems: "center"
     };
 
-    const timeZoneObj: string|undefined = useMemo(() => getTimeZone(place), [place])
-    const title: string = (timeZoneObj && place) || 'Israel'
+    const [timeZone, setTimeZone] = useState(getTimeZone(place))
+    const [title, setTitle] = useState(() => (timeZone && place) || 'Israel')
 
     return <div style={style}>
         <header>
             Time in {title}
         </header>
-        <p>{time.toLocaleTimeString(undefined, { timeZone: timeZoneObj })}</p>
+        <p>{time.toLocaleTimeString(undefined, { timeZone: timeZone[0] ?? 'Israel' })}</p>
+        <Input submitFn={function (inputText: string): InputResult {
+            console.log(inputText);
+            let status: StatusType;
+            let message;
+            const inputTimeZone = getTimeZone(inputText);
+            if (inputTimeZone.length == 0) {
+                status = 'error'
+                message = 'Wrong input'
+            } else if (inputTimeZone.length > 1) {
+                status = 'warning'
+                message = "There are more than one value"
+            } else {
+                status = 'success'
+                message = "Everything OK!"
+                setTimeZone(inputTimeZone)
+                setTitle(inputText);
+            }
+            return { status: status, message: message }
+        }} placeholder={"Input country or city"} buttonTitle='GO' type="text" />
     </div>
 }
 
 function getTimeZone(name: string) {
-    // let places: timeZone[] = [];
-    let res: string = '';
+    let places: string[] = [];
     timeZones.forEach(el => {
         if (JSON.stringify(el).toLowerCase().includes(name.toLowerCase())) {
-            res = el?.name;
+            places.push(el.name)
         }
 
     })
-    // const res = places.map(el => {
-    //     el = el.name
-    // })
-    return res;
+    return places;
 }
 
 export default Clock;
