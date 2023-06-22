@@ -8,11 +8,10 @@ import { InputResult } from "../model/InputResult";
 
 
 
-export const Lifes: React.FC<{ lifes: number }> = ({ lifes }) => {
+export const Lifes: React.FC = () => {
     const lifesArr: number[] = [5];
     const dispatch = useDispatch()
     function showLifes(inputLifes: string): InputResult{
-        lifes = +inputLifes;
         dispatch(countActions.setCount(+inputLifes))
     return {status: 'error'}
         
@@ -23,9 +22,11 @@ export const Lifes: React.FC<{ lifes: number }> = ({ lifes }) => {
     }, [])
     const direction = useSelectorDirection();
     const count = useSelectorCount()
+    {console.log(count)}
     return <section style={{ display: 'flex', flexDirection: direction, alignItems: 'center', justifyContent: 'space-around' }}>
-        <Input placeholder="number of lives" submitFn={showLifes} ></Input>
-        {Array.from({length: count}).map(_ => <LifeGames/>)}
+        
+        {count == 0? <Input placeholder="number of lives" submitFn={showLifes} ></Input> : 
+        Array.from({length: count}).map(_ => <LifeGames/>)}
     </section>
 
 }

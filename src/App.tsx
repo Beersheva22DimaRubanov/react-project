@@ -17,7 +17,7 @@ const App: React.FC = () => {
         })
     }, [])
     return <div>
-        <Lifes lifes={lifes}></Lifes>
+        <Lifes ></Lifes>
     </div>
 
 
