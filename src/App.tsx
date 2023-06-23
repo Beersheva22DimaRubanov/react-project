@@ -1,26 +1,31 @@
-import { useEffect } from "react"
-import { LifeGames } from "./components/LiveGame"
-import { useDispatch } from "react-redux"
-import { sizeActions } from "./redux/slices/cellSizeSlice"
-import { directionActions } from "./redux/slices/flexDirectionSlice"
-import { Lifes } from "./components/Lifes"
-import Input from "./components/common/Input"
-import { InputResult } from "./model/InputResult"
-
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { Home } from "./components/pages/Home"
+import { Orders } from "./components/pages/Orders"
+import { Customers } from "./components/pages/Customers"
+import { Products } from "./components/pages/Products"
+import { ShoppingCart } from "./components/pages/ShoppingCart"
+import { SignIn } from "./components/pages/SignIn"
+import { SignOut } from "./components/pages/SignOut"
+import { Navigator } from "./components/navigators/Navigator"
+import './App.css'
+import { useSelectorUser } from "./redux/store"
+import navigatorConfig from  './config/Navigator.json'
 const App: React.FC = () => {
-    let lifes = 0;
-    const dispatch = useDispatch<any>()
-    useEffect(() => {
-        window.addEventListener('resize', () => {
-            dispatch(sizeActions.setSize());
-            dispatch(directionActions.setDirection())
-        })
-    }, [])
-    return <div>
-        <Lifes ></Lifes>
-    </div>
+        const navItems = navigatorConfig[useSelectorUser()];
 
-
+    return <BrowserRouter>
+        <Routes>
+            <Route path="/" element = {<Navigator items={navItems}/>}> 
+                <Route index element = {<Home/>}/>
+                <Route path="orders" element = {<Orders/>}/>
+                <Route path ='customers' element = {<Customers/>}/>
+                <Route path="products" element = {<Products/>}/>
+                <Route path='shoppingCart' element = {<ShoppingCart/>}/>
+                <Route path='signIn' element = {<SignIn/>}/>
+                <Route path='signOut' element = {<SignOut/>}/>
+            </Route>
+        </Routes>
+    </BrowserRouter>
 }
 
 

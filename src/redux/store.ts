@@ -1,25 +1,17 @@
 import {configureStore} from '@reduxjs/toolkit';
-import { directionReducer } from './slices/flexDirectionSlice';
-import { countReducer } from './slices/lifeCountSlice';
-import { sizeReducer } from './slices/cellSizeSlice';
+import { userReducer } from './slices/AuthSlice';
 import { useSelector } from 'react-redux';
 
 export const store = configureStore({
     reducer: {
-        directionState: directionReducer,
-        countState: countReducer,
-        sizeState: sizeReducer
+        userState: userReducer
     }
 });
 
- export function useSelectorDirection(){
-    return useSelector<any, 'row' | 'column'>(state => state.directionState.direction)
-}
+export function useSelectorUser() {
+    return useSelector<any, 'admin'|'user'>(state => state.userState.user) ;
+ }
 
- export function useSelectorSize(){
-    return useSelector<any, number>(state => state.sizeState.size)
-}
 
- export function useSelectorCount(){
-    return useSelector<any, number>(state => state.countState.count)
-}
+
+ 
