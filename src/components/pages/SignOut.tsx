@@ -12,7 +12,7 @@ export const SignOut: React.FC = () => {
             <p style={{fontSize: '2em'}}>Are yre want to sign out?</p>
             <button style={{padding: '1em 1.75em', fontSize: '1em'}} onClick={() =>{
                 navigate('/') 
-                dispatch(userActions.setUser(''))}}>Ok</button>
+                dispatch(userActions.removeUser())}}>Ok</button>
         </div>
 
 </div>
