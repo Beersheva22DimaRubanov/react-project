@@ -10,8 +10,11 @@ import { Navigator } from "./components/navigators/Navigator"
 import './App.css'
 import { useSelectorUser } from "./redux/store"
 import navigatorConfig from  './config/Navigator.json'
+import { NotFound } from "./components/pages/NotFound"
 const App: React.FC = () => {
-        const navItems = navigatorConfig[useSelectorUser()];
+    const user = useSelectorUser();
+    
+        const navItems = navigatorConfig[user];
 
     return <BrowserRouter>
         <Routes>
@@ -23,6 +26,7 @@ const App: React.FC = () => {
                 <Route path='shoppingCart' element = {<ShoppingCart/>}/>
                 <Route path='signIn' element = {<SignIn/>}/>
                 <Route path='signOut' element = {<SignOut/>}/>
+                <Route path='/*' element = {<NotFound/>}/>
             </Route>
         </Routes>
     </BrowserRouter>
