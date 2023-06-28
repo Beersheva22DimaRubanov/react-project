@@ -1,14 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { stat } from "fs";
+import  UserData  from "../../model/UserData";
 
-function getUser(input: String) {
-    return input.toLowerCase().startsWith('admin') ? 'admin' : 'user'
-}
+
 const AUTH_ITEM = "auth-item";
 
-
-const initialState: { user: string } = {
-    user:  localStorage.getItem(AUTH_ITEM)?? 'basic'
+const initialState: { userData: UserData } = {
+    userData:  getUserData()
 }
 
 const slice = createSlice({
@@ -16,13 +14,13 @@ const slice = createSlice({
     name: 'userState',
     reducers: {
         setUser: (state, data) => {
-            const user = getUser(data.payload)
-            state.user = user;
-            localStorage.setItem(AUTH_ITEM, user);
-
+            if(data.payload){
+                localStorage.setItem(AUTH_ITEM, JSON.stringify(data.payload))
+                state.userData = data.payload;
+            }
         },
-        removeUser: (state) => {
-            state.user = 'basic';
+        reset: (state) => {
+            state.userData = null;
             localStorage.removeItem(AUTH_ITEM);
         }
     }
@@ -30,3 +28,12 @@ const slice = createSlice({
 
 export const userActions = slice.actions;
 export const userReducer = slice.reducer;
+
+function getUserData(): UserData {
+    const userDataJson = localStorage.getItem(AUTH_ITEM) || ''
+    let res: UserData = null;
+    if(userDataJson){
+        res = JSON.parse(userDataJson)
+    }
+    return res;
+}

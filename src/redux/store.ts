@@ -1,6 +1,7 @@
 import {configureStore} from '@reduxjs/toolkit';
 import { userReducer } from './slices/AuthSlice';
 import { useSelector } from 'react-redux';
+import UserData from '../model/UserData';
 
 export const store = configureStore({
     reducer: {
@@ -9,7 +10,7 @@ export const store = configureStore({
 });
 
 export function useSelectorUser() {
-    return useSelector<any, 'admin'|'user'>(state => state.userState.user) ;
+    return useSelector<any, UserData>(state => state.userState.userData) ;
  }
 
 

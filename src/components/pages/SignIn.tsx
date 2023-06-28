@@ -2,19 +2,21 @@ import { useDispatch } from "react-redux"
 import Input from "../common/Input";
 import { InputResult } from "../../model/InputResult";
 import { userActions } from "../../redux/slices/AuthSlice";
+import { SignInForm } from "../forms/SignInForm";
+import AuthServiceJwt from "../../service/AuthServiceJwt";
+import { authService } from "../../config/service-config";
+import  UserData  from "../../model/UserData";
 
 export const SignIn: React.FC = () => {
     const dispatch = useDispatch();
-     function setUser(userInput: string): InputResult{
-        dispatch(userActions.setUser(userInput))
-        return{status: 'error'}
+
+    async function setUser(data: {email: string, password: string}): Promise<InputResult>{
+        const res: UserData = await authService.login(data);
+        res && dispatch(userActions.setUser(res))
+        return {status: res ? "success" : "error", message: res? "" : "Incorrect Credentials"}
+        
     }
 
-    return  <div style={{display: "flex", flexDirection: "column", alignItems: 'center', justifyContent: 'center'}}>   
-    <p className = 'component-logo'>Sign in component</p>
-    <Input placeholder="input Username" submitFn={setUser}></Input>
-    </div>
- 
-
+    return <SignInForm setUser={setUser}></SignInForm>
 }
 

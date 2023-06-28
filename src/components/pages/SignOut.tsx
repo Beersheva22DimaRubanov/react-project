@@ -10,7 +10,7 @@ export const SignOut: React.FC = () => {
         <div style={{display: "flex", flexDirection: "column", alignItems: 'center', justifyContent: 'center'}}>
             <p style={{fontSize: '2em'}}>Are yre want to sign out?</p>
             <button style={{padding: '1em 1.75em', fontSize: '1em'}} onClick={() =>{
-                dispatch(userActions.removeUser())}}>Ok</button>
+                dispatch(userActions.reset())}}>Ok</button>
         </div>
 
 </div>
