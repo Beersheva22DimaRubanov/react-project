@@ -1,9 +1,4 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom"
-import { Home } from "./components/pages/Home"
-import { Orders } from "./components/pages/Orders"
-import { Customers } from "./components/pages/Customers"
-import { Products } from "./components/pages/Products"
-import { ShoppingCart } from "./components/pages/ShoppingCart"
 import { SignIn } from "./components/pages/SignIn"
 import { SignOut } from "./components/pages/SignOut"
 import './App.css'
@@ -14,14 +9,19 @@ import { RouteType } from "./components/navigators/Navigator"
 import { useMemo } from "react"
 import  UserData  from "./model/UserData"
 import routesConfig from '../src/config/routes-config.json'
+import Employees from "./components/pages/Employees"
+import AddEmployee from "./components/pages/AddEmployee"
+import AgeStatistics from "./components/pages/AgeStatistics"
+import SalaryStatistics from "./components/pages/SalaryStatistics"
+// type RouteTypeOrder = OrderTyp
 const {always, authenticated, admin, noadmin, noauthenticated} = routesConfig;
 
-function getRoutes(userdata: UserData): RouteType[] {
+function getRoutes(userData: UserData): RouteType[] {
     const res: RouteType[] = [];
     res.push(...always);
-    if(userdata){
+    if(userData){
         res.push(...authenticated);
-        if(userdata.role === 'admin'){
+        if(userData.role === 'admin'){
             res.push(...admin)
         } else{
             res.push(...noadmin)
@@ -29,7 +29,16 @@ function getRoutes(userdata: UserData): RouteType[] {
     } else{
         res.push(...noauthenticated)
     }
-    return res;
+    // if(userData){
+    //     res[res.length-1].name = userData.email
+    // }
+    return res.sort((r1, r2) => {
+        let res = 0;
+        if(r1.order && r2.order){
+            res = r1.order - r2.order
+        } 
+        return res;
+    });
   }
 
 const App: React.FC = () => {
@@ -39,11 +48,10 @@ const App: React.FC = () => {
     return <BrowserRouter>
         <Routes>
             <Route path="/" element = {<NavigatorDispatcher routes={routes}/>}> 
-                <Route index element = {<Home/>}/>
-                <Route path="orders" element = {<Orders/>}/>
-                <Route path ='customers' element = {<Customers/>}/>
-                <Route path="products" element = {<Products/>}/>
-                <Route path='shoppingCart' element = {<ShoppingCart/>}/>
+                <Route index element = {<Employees/>}/>
+                <Route path="employees/add" element = {<AddEmployee/>}/>
+                <Route path ='statistics/age' element = {<AgeStatistics/>}/>
+                <Route path="statistics/salary" element = {<SalaryStatistics/>}/>
                 <Route path='signIn' element = {<SignIn/>}/>
                 <Route path='signOut' element = {<SignOut/>}/>
                 <Route path='/*' element = {<NotFound/>}/>

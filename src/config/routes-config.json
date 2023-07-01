@@ -1,9 +1,14 @@
 {
-    "always": [{"to": "/", "name": "Home"}],
-    "authenticated": [{"to": "/signout", "name": "Sign Out"},
-     {"to": "/products", "name": "Products"}],
-     "admin": [{"to": "/orders", "name": "Orders"},
-     {"to": "/customers", "name": "Customers"}],
-     "noadmin": [{"to": "/shoppingcart", "name": "Shopping Cart"}],
-     "noauthenticated": [{"to": "/signin", "name": "Sign In"}]
+    "always": [],
+    "authenticated": [{"to": "/", "name": "Employees Table", "order": 1}, 
+     {"to": "/signout", "name": "Sign Out", "order": 1000},
+     {"to": "/statiscics/age", "name": "Age statistics", "order": 100},
+     {"to": "/statiscics/salary", "name": "Salary statistics", "order": 100}
+    ],
+    
+     "admin": [{"to": "/employees/add", "name": "Add employee", "order": 2}],
+    
+     "noadmin": [],
+    
+     "noauthenticated": [{"to": "/signin", "name": "Sign In", "order": 1}]
 }

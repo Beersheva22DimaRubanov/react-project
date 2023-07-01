@@ -1,8 +1,11 @@
 import UserData from "../model/UserData";
 import AuthService from "./AuthService";
+export const AUTH_DATA_JWT = 'authDataJWT'
 
 function getUserData(data: any): UserData{
-    const jwtPayloadJSON = atob(data.accessToken.split('.')[1]);
+    const token = data.accessToken;
+    localStorage.setItem(AUTH_DATA_JWT, token)
+    const jwtPayloadJSON = atob(token.split('.')[1]);
     const jwtPayloadObj = JSON.parse(jwtPayloadJSON);
     return {email: jwtPayloadObj.email, role: jwtPayloadObj.sub}
 }
@@ -23,7 +26,7 @@ export default class AuthServiceJwt implements AuthService{
 
 
     async logout(): Promise<void> {
-        throw new Error("Method not implemented.");
+        localStorage.removeItem(AUTH_DATA_JWT)
     }
     
 }

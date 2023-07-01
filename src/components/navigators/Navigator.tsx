@@ -4,7 +4,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 
 
 export type RouteType = {
-    to: string, name: string
+    to: string, name: string, order?: number
 }
 
 export const Navigator: React.FC<{ routes: RouteType[] }> = ({ routes }) => {
@@ -24,7 +24,7 @@ export const Navigator: React.FC<{ routes: RouteType[] }> = ({ routes }) => {
     }
 
     function getTabs(){
-        return routes.map(r => <Tab component={Link} to = {r.to} label= {r.name}></Tab>)
+        return routes.map((r) => <Tab component={Link} to = {r.to} label= {r.name}></Tab>)
     }
     return <Box mt={10}>
         <AppBar sx={{backgroundColor: 'lightgray'}}>
