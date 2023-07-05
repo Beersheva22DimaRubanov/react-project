@@ -4,16 +4,36 @@ import UserData from "../../model/UserData";
 import { InputResult } from "../../model/InputResult";
 import Employee from "../../model/Employee";
 import { employeesService } from "../../config/service-config";
+import CodePayload from "../../model/CodePayload";
+import CodeType from "../../model/CodeType";
+import { useDispatch } from "react-redux";
+import { codeActions } from "../../redux/slices/codeSlice";
 
-const AddEmployee: React.FC = ()=> {
-    async function submitFn (data: Employee): Promise<InputResult>{
-        const res = employeesService.addEmployee(data);
-        return {status: await res? 'success': 'error', message: await res? "User added": 'Some problem please try latter' }
-    }
-    return <Container>
+const AddEmployee: React.FC = () => {
+    const dispatch = useDispatch()
+    const codeAlert: CodePayload = {code: CodeType.OK, message: ''}
+    async function submitFn(data: Employee) {
+        const res = await employeesService.addEmployee(data);
+        if(typeof res === 'string'){
+        if(res.includes('Authentification')){
+            codeAlert.code = CodeType.AUTH_ERROR;
+            codeAlert.message = 'Authentification error:' + res
+        } else {
+            codeAlert.code = CodeType.SERVER_ERROR
+            codeAlert.message = "Server error: " + res
+        }
+           
+    } else {
+        codeAlert.message = `Emploee with id: ${res.id} added`
     
-    <Typography variant="h4" align="center">Add employee page</Typography>
-    <AddUserForm submitFn={submitFn}></AddUserForm>
+    }
+    dispatch(codeActions.set(codeAlert))
+    }
+
+
+    return <Container>
+        <Typography variant="h4" align="center">Add employee page</Typography>
+        <AddUserForm submitFn={submitFn} empl={null}></AddUserForm>
     </Container>
 }
 

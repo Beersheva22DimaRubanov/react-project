@@ -1,14 +1,45 @@
 {
     "always": [],
-    "authenticated": [{"to": "/", "name": "Employees Table", "order": 1}, 
-     {"to": "/signout", "name": "Sign Out", "order": 1000},
-     {"to": "/statiscics/age", "name": "Age statistics", "order": 100},
-     {"to": "/statiscics/salary", "name": "Salary statistics", "order": 100}
+    "authenticated": [
+        {
+            "to": "/",
+            "name": "Employees Table",
+            "order": 1
+        },
+        {
+            "to": "/signout",
+            "name": "Sign Out",
+            "order": 1000
+        },
+        {
+            "to": "/statiscics/age",
+            "name": "Age statistics",
+            "order": 100
+        },
+        {
+            "to": "/statiscics/salary",
+            "name": "Salary statistics",
+            "order": 100
+        }
     ],
-    
-     "admin": [{"to": "/employees/add", "name": "Add employee", "order": 2}],
-    
-     "noadmin": [],
-    
-     "noauthenticated": [{"to": "/signin", "name": "Sign In", "order": 1}]
+    "admin": [
+        {
+            "to": "/employees/add",
+            "name": "Add employee",
+            "order": 2
+        },
+        {
+            "to": "/employees/generation",
+            "name": "Generation",
+            "order": 3
+        }
+    ],
+    "noadmin": [],
+    "noauthenticated": [
+        {
+            "to": "/signin",
+            "name": "Sign In",
+            "order": 1
+        }
+    ]
 }

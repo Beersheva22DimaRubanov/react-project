@@ -1,20 +1,20 @@
-import { Alert, Box, Button, Container, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Radio, RadioGroup, Select, SelectChangeEvent, Snackbar, TextField, Typography } from "@mui/material"
+import { Alert, Box, Button, Container, FormControlLabel, Grid, InputLabel, MenuItem, Radio, RadioGroup, Select, SelectChangeEvent, Snackbar, TextField, Typography } from "@mui/material"
 import { InputResult } from "../../model/InputResult"
 import employeeConfig from "../../config/employee-config.json"
 import { useState } from "react"
 import Employee from "../../model/Employee"
-import { TextChange } from "typescript"
 import React from "react"
-import { error } from "console"
 import { StatusType } from "../../model/StatusType"
+import CodePayload from "../../model/CodePayload"
 
 type props = {
-    submitFn: (data: Employee) => Promise<InputResult>
+    submitFn: (data: Employee) => void
+    empl: Employee| null
 }
 const SALARY_ERR_MESSAGE = `Enter salary in range: ${employeeConfig.minSalary} - ${employeeConfig.maxSalary}`
 const BIRTH_DATE_ERR_MESSAGE = `Enter year in range: ${employeeConfig.minYear} - ${employeeConfig.maxYear}`
 const FORM_ERR_MESSAGE = 'All fields should be filled'
-const AddUserForm: React.FC<props> = ({ submitFn }) => {
+const AddUserForm: React.FC<props> = ({ submitFn, empl }) => {
     const [department, setDepartment] = useState('');
     const [salaryError, setsalaryError] = useState(false);
     const [birthDateError, setBirthDateError] = useState(false);
@@ -24,26 +24,23 @@ const AddUserForm: React.FC<props> = ({ submitFn }) => {
     const shownMessage = React.useRef<string>('')
     const severity = React.useRef<StatusType>('success')
 
-
     const handleChange = (event: SelectChangeEvent) => {
         setDepartment(event.target.value as string);
     };
 
-
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: any) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const employeeName: string = data.get('employeeName')! as string;
-        const birthDate: string = data.get('birthDate')! as string;
+        const birthYear: number = empl? empl.birthYear: +(data.get('birthDate')! as string);
         const salary: string = data.get('salary')! as string;
         const department: string = data.get('department')! as string;
-        const gender: 'male' | 'female' = data.get('gender')?.toString() as 'male' | 'female';
-        const isFormReady: boolean = checkForm(employeeName, birthDate, +salary, department, gender);
+        const gender: 'male' | 'female' = empl? empl.gender: data.get('gender')?.toString() as 'male' | 'female';
+        const isFormReady: boolean = checkForm(employeeName, birthYear, +salary, department, gender);
         if (isFormReady) {
-            const res = await submitFn({ birthDate, department, gender, name: employeeName, salary: +salary * 1000 })
-            shownMessage.current = res.message!;
-            severity.current = res.status;
-            setOpen(true)
+            const res = submitFn({ birthYear, department, gender, name: employeeName, salary: +salary * 1000 })
+            data.delete('employeeName')
+            event.target.reset()
         } else {
             setOpen(true)
             shownMessage.current = FORM_ERR_MESSAGE!;
@@ -52,8 +49,9 @@ const AddUserForm: React.FC<props> = ({ submitFn }) => {
         }
     }
 
-    function checkForm(name: string, birthDate: string, salary: number, department: string, gender: 'male' | 'female') {
+    function checkForm(name: string, birthDate: number, salary: number, department: string, gender: 'male' | 'female') {
         let res = true;
+        console.log(empl)
         if (!name || !birthDate || !salary || !department || !gender) {
             res = false;
         } else if (birthDateError) {
@@ -101,20 +99,22 @@ const AddUserForm: React.FC<props> = ({ submitFn }) => {
                     <Grid item xs={4} mb={3}>
                         <TextField
                             id="outlined-disabled"
-                            defaultValue=""
+                            defaultValue={empl?.name}
                             fullWidth
                             placeholder="Employee name"
                             name="employeeName"
                             required
                         />
                     </Grid>
-                    <Grid item xs={4} mb={3}>
+                     <Grid item xs={4} mb={3}>
                         <TextField
                             id="outlined-disabled"
                             label="Birth date"
-                            defaultValue=""
+                            defaultValue={empl?.birthYear}
+                            value={empl?.birthYear}
                             name='birthDate'
                             placeholder="yyyy"
+                            disabled = {empl? true: false}
                             required
                             fullWidth
                             onBlur={handleDateBirth}
@@ -128,19 +128,19 @@ const AddUserForm: React.FC<props> = ({ submitFn }) => {
                                 name='salary'
                                 placeholder="Salary"
                                 type="number"
+                                defaultValue={empl? empl.salary/1000: ''}
                                 fullWidth
                                 onBlur={handleSalary}
                                 error={salaryError}
                                 helperText={errMessage.current}
-                                
-
                             />
                     </Grid>
                     <Grid item xs={4} mb={3}>
 
                         <Select
                             id="demo-simple-select"
-                            value={department}
+                            // value={department}
+                            defaultValue= {empl? empl.department: "Departments"}
                             displayEmpty
                             fullWidth
                             onChange={handleChange}
@@ -154,20 +154,24 @@ const AddUserForm: React.FC<props> = ({ submitFn }) => {
 
                     </Grid>
                 </Grid>
-                <InputLabel id="demo-radio-buttons-group-label">Gender</InputLabel>
+               { <Box>
+                <InputLabel id="demo-radio-buttons-group-label" >Gender</InputLabel>
                 <RadioGroup
                     aria-labelledby="demo-radio-buttons-group-label"
                     name="gender"
+                    value = {empl?.gender}
+                    
                 >
-                    <FormControlLabel value="female" control={<Radio />} label="Female" />
-                    <FormControlLabel value="male" control={<Radio />} label="Male" />
+                    <FormControlLabel value="female" control={<Radio />} disabled = {empl? true: false} label="Female" />
+                    <FormControlLabel value="male" control={<Radio />} disabled = {empl? true: false} label="Male" />
                 </RadioGroup>
+                </Box>}
                 <Button
                     type="submit"
                     variant="contained"
                     sx={{ mt: 3, mb: 2 }}
                 >
-                    Add user
+                    Submit
                 </Button>
             </Box>
         </Box>

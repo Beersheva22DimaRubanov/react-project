@@ -1,6 +1,6 @@
 type Employee = {
     id?: any,
-    birthDate: String,
+    birthYear: number,
     name: string,
     department: string,
     salary: number,
