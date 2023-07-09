@@ -12,12 +12,12 @@
             "order": 1000
         },
         {
-            "to": "/statiscics/age",
+            "to": "/statistics/age",
             "name": "Age statistics",
             "order": 100
         },
         {
-            "to": "/statiscics/salary",
+            "to": "/statistics/salary",
             "name": "Salary statistics",
             "order": 100
         }
@@ -33,6 +33,7 @@
             "name": "Generation",
             "order": 3
         }
+
     ],
     "noadmin": [],
     "noauthenticated": [

@@ -3,12 +3,12 @@ export function range(min, max) {
 }
 
 export function count(array, field, interval) {
-    return array.reduce((res, cur) => {
+    return array.reduce((res, cur)=>{
         const intervalNumber = Math.trunc(cur[field] / interval);
         res[intervalNumber] = res[intervalNumber] == undefined ? 1 :
-            res[intervalNumber] + 1
-        return res;
-    }, {})
+         res[intervalNumber] + 1
+         return res;
+    }, {});
 }
 
  function arraySum(array){

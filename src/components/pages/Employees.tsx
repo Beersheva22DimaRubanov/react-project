@@ -58,9 +58,9 @@ const Employees: React.FC = () => {
     }
 
     useEffect(() => {
-        let codeAlert: CodePayload = {code: CodeType.OK, message: ''} 
         const subsciption = employeesService.getEmployees().subscribe({
             next(emplArray: Employee[] | string) {
+                let codeAlert: CodePayload = {code: CodeType.OK, message: ''} 
                 if (typeof emplArray === 'string') {
                     if (emplArray.includes('Authentication')) {
                         codeAlert.code = CodeType.AUTH_ERROR

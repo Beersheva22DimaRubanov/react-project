@@ -57,15 +57,15 @@ const App: React.FC = () => {
     const dispatch = useDispatch()
     const userData = useSelectorUser();
     const codeMessage: CodePayload = useSelectorCode()
-    const [message, setMessage] = useState('')
+    // const [message, setMessage] = useState('')
     const[alertMessage, severity] = useMemo(() => getSnackBarData(), [codeMessage])
     const routes = useMemo(() => getRoutes(userData), [userData])
 
     function getSnackBarData(){
-        let res: [string, StatusType] = ['', 'success']
+        let res: [string, StatusType] = ['', 'error']
         res[1] = codeMessage.code === CodeType.OK ? 'success': 'error'
         res[0] = codeMessage.message;
-        setMessage(codeMessage.message)
+        // setMessage(codeMessage.message)
         if(codeMessage.code === CodeType.AUTH_ERROR){
             authService.logout()
             dispatch(userActions.reset())
@@ -86,7 +86,7 @@ const App: React.FC = () => {
                 <Route path='/*' element = {<NotFound/>}/>
             </Route>
         </Routes>
-        <Snackbar open={!!alertMessage} transitionDuration={1000} autoHideDuration={3000} onClose={() =>  dispatch(codeActions.reset())}
+        <Snackbar open={!!alertMessage}  autoHideDuration={3000} onClose={() =>  dispatch(codeActions.reset())}
             anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
             <Alert severity={severity} >{alertMessage}</Alert>
          </Snackbar> 

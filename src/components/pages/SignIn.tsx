@@ -14,7 +14,6 @@ export const SignIn: React.FC = () => {
         const res: UserData = await authService.login(data);
         res && dispatch(userActions.setUser(res))
         return {status: res ? "success" : "error", message: res? "" : "Incorrect Credentials"}
-        
     }
 
     return <SignInForm setUser={setUser}></SignInForm>
