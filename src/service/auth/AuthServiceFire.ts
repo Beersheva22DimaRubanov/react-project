@@ -24,8 +24,9 @@ export default class AuthServiceFire implements AuthService{
     async login(loginData: { email: string; password: string; }): Promise<UserData> {
         let userData: UserData = null;
         try {
-            const userAuth = await signInWithEmailAndPassword(this.auth, loginData.email,
-                // await signInWithPopup(this.auth, new GoogleAuthProvider())
+            const userAuth = !loginData.password? 
+             await signInWithPopup(this.auth, mapProviders.get(loginData.email)!) :
+            await signInWithEmailAndPassword(this.auth, loginData.email,
                  loginData.password);
             userData = {email: loginData.email,
                  role: await this.isAdmin(userAuth.user.uid) ? 'admin' : 'user'}     
