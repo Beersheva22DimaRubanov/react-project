@@ -22,6 +22,7 @@ import { authService } from "./config/service-config"
 import { useDispatch } from "react-redux"
 import { userActions } from "./redux/slices/AuthSlice"
 import { codeActions } from "./redux/slices/codeSlice"
+import process from "process"
 // type RouteTypeOrder = OrderTyp
 const {always, authenticated, admin, noadmin, noauthenticated} = routesConfig;
 
@@ -32,6 +33,9 @@ function getRoutes(userData: UserData): RouteType[] {
         res.push(...authenticated);
         if(userData.role === 'admin'){
             res.push(...admin)
+            if(routesConfig.developmentAdmin && process.env.NODE_ENV != 'production'){
+                res.push(...routesConfig.developmentAdmin);
+            }
         } else{
             res.push(...noadmin)
         }

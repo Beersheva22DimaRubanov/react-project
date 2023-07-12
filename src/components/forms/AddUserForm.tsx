@@ -1,185 +1,134 @@
-import { Alert, Box, Button, Container, FormControlLabel, Grid, InputLabel, MenuItem, Radio, RadioGroup, Select, SelectChangeEvent, Snackbar, TextField, Typography } from "@mui/material"
-import { InputResult } from "../../model/InputResult"
+import React, { useRef, useState } from "react";
+import { FormControl, Grid, TextField, InputLabel, Select, Box, MenuItem, Button, FormLabel, RadioGroup, FormControlLabel, Radio, FormHelperText, Snackbar, Alert } from '@mui/material';
+import Employee from "../../model/Employee";
 import employeeConfig from "../../config/employee-config.json"
-import { useState } from "react"
-import Employee from "../../model/Employee"
-import React from "react"
-import { StatusType } from "../../model/StatusType"
-import CodePayload from "../../model/CodePayload"
-
-type props = {
-    submitFn: (data: Employee) => void
-    empl: Employee| null
+import { StatusType } from "../../model/StatusType";
+import { InputResult } from "../../model/InputResult";
+type Props = {
+    submitFn: (empl: Employee) => Promise<InputResult>,
+    employeeUpdated?: Employee
 }
-const SALARY_ERR_MESSAGE = `Enter salary in range: ${employeeConfig.minSalary} - ${employeeConfig.maxSalary}`
-const BIRTH_DATE_ERR_MESSAGE = `Enter year in range: ${employeeConfig.minYear} - ${employeeConfig.maxYear}`
-const FORM_ERR_MESSAGE = 'All fields should be filled'
-const AddUserForm: React.FC<props> = ({ submitFn, empl }) => {
-    const [department, setDepartment] = useState('');
-    const [salaryError, setsalaryError] = useState(false);
-    const [birthDateError, setBirthDateError] = useState(false);
-    const [open, setOpen] = useState(false)
-    const errMessage = React.useRef('')
-    const dateErrMessage = React.useRef('')
-    const shownMessage = React.useRef<string>('')
-    const severity = React.useRef<StatusType>('success')
-
-    const handleChange = (event: SelectChangeEvent) => {
-        setDepartment(event.target.value as string);
-    };
-
-    const handleSubmit = async (event: any) => {
+const initialDate: any = 0;
+const initialGender: any = '';
+const initialEmployee: Employee = {
+    id: 0, birthDate: initialDate, name: '',department: '', salary: 0,
+     gender: initialGender
+};
+export const AddUserForm: React.FC<Props> = ({ submitFn, employeeUpdated }) => {
+    const { minYear, minSalary, maxYear, maxSalary, departments }
+        = employeeConfig;
+    const [employee, setEmployee] =
+        useState<Employee>(employeeUpdated || initialEmployee);
+        const [errorMessage, setErrorMessage] = useState('');
+    function handlerName(event: any) {
+        const name = event.target.value;
+        const emplCopy = { ...employee };
+        emplCopy.name = name;
+        setEmployee(emplCopy);
+    }
+    function handlerBirthdate(event: any) {
+        const birthDate = event.target.value;
+        const emplCopy = { ...employee };
+        emplCopy.birthDate = new Date(birthDate);
+        setEmployee(emplCopy);
+    }
+    function handlerSalary(event: any) {
+        const salary: number = +event.target.value;
+        const emplCopy = { ...employee };
+        emplCopy.salary = salary;
+        setEmployee(emplCopy);
+    }
+    function handlerDepartment(event: any) {
+        const department = event.target.value;
+        const emplCopy = { ...employee };
+        emplCopy.department = department;
+        setEmployee(emplCopy);
+    }
+    function genderHandler(event: any) {
+        setErrorMessage('');
+        const gender:'male'|'female' = event.target.value;
+        const emplCopy = { ...employee };
+        emplCopy.gender = gender;
+        setEmployee(emplCopy);
+    }
+    async function onSubmitFn(event: any) {
         event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const employeeName: string = data.get('employeeName')! as string;
-        const birthYear: number = empl? empl.birthYear: +(data.get('birthDate')! as string);
-        const salary: string = data.get('salary')! as string;
-        const department: string = data.get('department')! as string;
-        const gender: 'male' | 'female' = empl? empl.gender: data.get('gender')?.toString() as 'male' | 'female';
-        const isFormReady: boolean = checkForm(employeeName, birthYear, +salary, department, gender);
-        if (isFormReady) {
-            const res = submitFn({ birthYear, department, gender, name: employeeName, salary: +salary * 1000 })
-            data.delete('employeeName')
-            event.target.reset()
+        if(!employee.gender) {
+            setErrorMessage("Please select gender")
         } else {
-            setOpen(true)
-            shownMessage.current = FORM_ERR_MESSAGE!;
-            severity.current = 'error';
-
+             const res =  await submitFn(employee);
+             res.status == "success" && event.target.reset();
         }
     }
-
-    function checkForm(name: string, birthDate: number, salary: number, department: string, gender: 'male' | 'female') {
-        let res = true;
-        console.log(empl)
-        if (!name || !birthDate || !salary || !department || !gender) {
-            res = false;
-        } else if (birthDateError) {
-            res = false
-        } else if (salaryError) {
-            res = false
-        }
-        return res;
+    function onResetFn(event: any) {
+        setEmployee(employeeUpdated || initialEmployee);
     }
 
-    function setMenuItems() {
-        return employeeConfig.departments.map(dep => <MenuItem value={dep}>{dep}</MenuItem>)
-    }
-
-    function handleSalary(event: any) {
-        if (+event.target.value > employeeConfig.maxSalary || +event.target.value < employeeConfig.minSalary) {
-            setsalaryError(true);
-            errMessage.current = SALARY_ERR_MESSAGE;
-        } else {
-            setsalaryError(false);
-            errMessage.current = '';
-        }
-    }
-
-    function handleDateBirth(event: any) {
-        if (+event.target.value > employeeConfig.maxYear || +event.target.value < employeeConfig.minYear) {
-            setBirthDateError(true);
-            dateErrMessage.current = BIRTH_DATE_ERR_MESSAGE;
-        } else {
-            setBirthDateError(false);
-            dateErrMessage.current = '';
-        }
-    }
-
-    return <Container component="main">
-        <Box>
-            <Box component="form" onSubmit={handleSubmit} noValidate sx={{
-                marginTop: 8,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-                <Grid container spacing={2} columns = {{xs :4, sm: 4, md: 8}} justifyContent={'center'} alignItems={'center'}>
-                    <Grid item xs={4} mb={3}>
-                        <TextField
-                            id="outlined-disabled"
-                            defaultValue={empl?.name}
-                            fullWidth
-                            placeholder="Employee name"
-                            name="employeeName"
-                            required
-                        />
-                    </Grid>
-                     <Grid item xs={4} mb={3}>
-                        <TextField
-                            id="outlined-disabled"
-                            label="Birth date"
-                            defaultValue={empl?.birthYear}
-                            value={empl?.birthYear}
-                            name='birthDate'
-                            placeholder="yyyy"
-                            disabled = {empl? true: false}
-                            required
-                            fullWidth
-                            onBlur={handleDateBirth}
-                            error={birthDateError}
-                            helperText={dateErrMessage.current}
-                        />
-                    </Grid>
-                    <Grid item xs={4} mb={3}>
-                            <TextField
-                                label="Salary"
-                                name='salary'
-                                placeholder="Salary"
-                                type="number"
-                                defaultValue={empl? empl.salary/1000: ''}
-                                fullWidth
-                                onBlur={handleSalary}
-                                error={salaryError}
-                                helperText={errMessage.current}
-                            />
-                    </Grid>
-                    <Grid item xs={4} mb={3}>
-
-                        <Select
-                            id="demo-simple-select"
-                            // value={department}
-                            defaultValue= {empl? empl.department: "Departments"}
-                            displayEmpty
-                            fullWidth
-                            onChange={handleChange}
-                            name='department'
-                        >
-                            <MenuItem value="">
-                                <em>Departments</em>
-                            </MenuItem>
-                            {setMenuItems()}
+    return <Box sx={{ marginTop: { sm: "25vh" } }}>
+        <form onSubmit={onSubmitFn} onReset={onResetFn}>
+            <Grid container spacing={4} justifyContent="center">
+                <Grid item xs={8} sm={5} >
+                    <FormControl fullWidth required>
+                        <InputLabel id="select-department-id">Department</InputLabel>
+                        <Select labelId="select-department-id" label="Department"
+                            value={employee.department} onChange={handlerDepartment}>
+                            <MenuItem value=''>None</MenuItem>
+                            {departments.map(dep => <MenuItem value={dep} key={dep}>{dep}</MenuItem>)}
                         </Select>
-
-                    </Grid>
+                    </FormControl>
                 </Grid>
-               { <Box>
-                <InputLabel id="demo-radio-buttons-group-label" >Gender</InputLabel>
-                <RadioGroup
-                    aria-labelledby="demo-radio-buttons-group-label"
-                    name="gender"
-                    value = {empl?.gender}
-                    
-                >
-                    <FormControlLabel value="female" control={<Radio />} disabled = {empl? true: false} label="Female" />
-                    <FormControlLabel value="male" control={<Radio />} disabled = {empl? true: false} label="Male" />
-                </RadioGroup>
-                </Box>}
-                <Button
-                    type="submit"
-                    variant="contained"
-                    sx={{ mt: 3, mb: 2 }}
-                >
-                    Submit
-                </Button>
-            </Box>
-        </Box>
-        <Snackbar open={open} transitionDuration={1000} onClose={() => setOpen(false)}
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-            <Alert severity={severity.current}>{shownMessage.current}</Alert>
-        </Snackbar>
-    </Container>
-}
+                <Grid item xs={8} sm={5} >
+                    <TextField type="text" required fullWidth label="Employee name"
+                        helperText="enter Employee name" onChange={handlerName}
+                        value={employee.name} />
+                </Grid>
+                <Grid item xs={8} sm={4} md={5}>
+                    <TextField type="date" required fullWidth label="birthDate"
+                        value={employee.birthDate ? employee.birthDate.toISOString()
+                            .substring(0, 10) : ''} inputProps={{
+                                readOnly: !!employeeUpdated,
+                            min: `${minYear}-01-01`,
+                            max: `${maxYear}-12-31`
+                        }} InputLabelProps={{
+                            shrink: true
+                        }} onChange={handlerBirthdate} />
+                </Grid>
+                <Grid item xs={8} sm={4} md={5} >
+                    <TextField label="salary" fullWidth required
+                        type="number" onChange={handlerSalary}
+                        value={employee.salary || ''}
+                        helperText={`enter salary in range [${minSalary}-${maxSalary}]`}
+                        inputProps={{
+                            min: `${minSalary }`,
+                            max: `${maxSalary }`
+                        }} />
+                </Grid>
+                <Grid item xs={8} sm={4} md={5}>
+                    <FormControl required error={!!errorMessage}>
+                        <FormLabel id="gender-group-label">Gender</FormLabel>
+                        <RadioGroup
+                            aria-labelledby="gender-group-label"
+                            defaultValue=""
+                            value={employee.gender || ''}
+                            name="radio-buttons-group"
+                           row onChange={genderHandler}
+                        >
+                            <FormControlLabel value="female" control={<Radio />} label="Female" disabled = {!!employeeUpdated} />
+                            <FormControlLabel value="male" control={<Radio />} label="Male" disabled = {!!employeeUpdated}/>
+                            <FormHelperText>{errorMessage}</FormHelperText>
+                        </RadioGroup>
+                    </FormControl>
+                </Grid>
+            </Grid>
 
-export default AddUserForm;
+            <Box sx={{ marginTop: { xs: "10vh", sm: "5vh" }, textAlign: "center" }}>
+                <Button type="submit" >Submit</Button>
+                <Button type="reset">Reset</Button>
+            </Box>
+
+
+
+        </form>
+       
+    </Box>
+}

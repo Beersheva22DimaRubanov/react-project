@@ -1,13 +1,13 @@
 import { Modal, Box, Typography } from "@mui/material"
 import Employee from "../model/Employee";
-import AddUserForm from "./forms/AddUserForm";
 import { useState } from "react";
 import { employeesService } from "../config/service-config";
 import { InputResult } from "../model/InputResult";
+import { AddUserForm } from "./forms/AddUserForm";
 
 type Props = {
     open: boolean,
-    submitFn(data: Employee): void,
+    submitFn(data: Employee): Promise<InputResult>,
     handleClose(): void,
     employee: Employee
 }
@@ -33,7 +33,7 @@ const UpdateEmployee: React.FC<Props> = ({ open, handleClose,employee, submitFn 
         aria-describedby="modal-modal-description"
     >
         <Box sx={style}>
-            <AddUserForm submitFn={submitFn} empl={employee} />
+            <AddUserForm submitFn={submitFn} employeeUpdated={employee} />
         </Box>
     </Modal>;
 } 

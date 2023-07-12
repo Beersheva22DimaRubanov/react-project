@@ -1,4 +1,4 @@
-import UserData from "../model/UserData";
+import UserData from "../../model/UserData";
 import AuthService from "./AuthService";
 export const AUTH_DATA_JWT = 'authDataJWT'
 
@@ -12,6 +12,9 @@ function getUserData(data: any): UserData{
 
 export default class AuthServiceJwt implements AuthService{
     constructor(private url: string){}
+    getAvailableProvider(): { providerName: string; providerIconUrl: string; }[] {
+      return [];
+    }
 
    async login(loginData: { email: string; password: string; }): Promise<UserData> {
         const response = await fetch(this.url, {

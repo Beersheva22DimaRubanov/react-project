@@ -27,13 +27,14 @@
             "to": "/employees/add",
             "name": "Add employee",
             "order": 2
-        },
+        }
+    ],
+    "developmentAdmin": [
         {
             "to": "/employees/generation",
             "name": "Generation",
             "order": 3
         }
-
     ],
     "noadmin": [],
     "noauthenticated": [
