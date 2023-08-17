@@ -84,7 +84,7 @@ export default class EmployeesServiceFire implements EmployeesService {
 
     async updateEmployee( empl: Employee): Promise<Employee> {
         const docRef = this.getDocRef(empl.id);
-        if (!empl.id || await this.exists(empl.id)) {https://onedrive.live.com/?v=photos&cid=1208BD1DD81FFAC7&id=1208BD1DD81FFAC7!167&sc=photosWidget
+        if (!empl.id || await this.exists(empl.id)) {
             throw 'Not found'
         }
         try {

@@ -104,7 +104,6 @@ const SignInForm: React.FC<Props> = ({ submitFn, networks }) => {
                                     type="submit"
                                     fullWidth
                                     variant="contained"
-
                                 >
                                     Sign In
                                 </Button>
@@ -116,16 +115,10 @@ const SignInForm: React.FC<Props> = ({ submitFn, networks }) => {
                                     submitFn({ email: n.providerName, password: '' })} fullWidth variant="outlined"
                                 sx={{ mt: 2 }}
                             >
-
                                 <Avatar src={n.providerIconUrl} sx={{ width: { xs: '6vh', sm: '6vw', lg: '3vw' } }} />
                             </Button>)}
                             </Grid>}
                         </Grid>
-
-
-
-
-
                     </Box>
                     <Snackbar open={open} autoHideDuration={10000}
                         onClose={() => setOpen(false)}>
