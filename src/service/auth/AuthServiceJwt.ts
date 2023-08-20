@@ -7,7 +7,7 @@ function getUserData(data: any): UserData{
     localStorage.setItem(AUTH_DATA_JWT, token)
     const jwtPayloadJSON = atob(token.split('.')[1]);
     const jwtPayloadObj = JSON.parse(jwtPayloadJSON);
-    return {email: jwtPayloadObj.username, role: jwtPayloadObj.sub}
+    return {email: jwtPayloadObj.sub, role: jwtPayloadObj.roles.includes('ADMIN')?"admin":'user'}
 }
 
 export default class AuthServiceJwt implements AuthService{
@@ -17,12 +17,15 @@ export default class AuthServiceJwt implements AuthService{
     }
 
    async login(loginData: { email: string; password: string; }): Promise<UserData> {
+    const serverLoginData: any = {};
+    serverLoginData.username = loginData.email;
+    serverLoginData.password = loginData.password;
         const response = await fetch(this.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(loginData)
+            body: JSON.stringify(serverLoginData)
         });
             return response.ok ? getUserData(await response.json()) : null
     }

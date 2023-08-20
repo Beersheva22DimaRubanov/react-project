@@ -21,11 +21,11 @@ class Cache {
         return this.cacheString.length === 0;
     }
 }
-function getResponseText(response: Response): string {
+async function getResponseText(response: Response): Promise<string> {
     let res = '';
     if (!response.ok) {
-        const { status, statusText } = response;
-        res = status == 401 || status == 403 ? 'Authentication' : statusText;
+        const { status } = response;
+        res = status == 401 || status == 403 ? 'Authentication' : await response.text();
     }
     return res;
 
@@ -48,12 +48,12 @@ async function fetchRequest(url: string, options: RequestInit, empl?: Employee):
     try {
         if (options.method == "DELETE" || options.method == "PUT") {
             flUpdate = false;
-            await fetchRequest(url, {method: "GET"});
+            // await fetchRequest(url, {method: "GET"});
             flUpdate = true;
         }
-
+        console.log(options)
         const response = await fetch(url, options);
-        responseText = getResponseText(response);
+        responseText = await getResponseText(response);
         if (responseText) {
             throw responseText;
         }
@@ -72,11 +72,14 @@ async function fetchAllEmployees(url: string):Promise< Employee[]|string> {
 
 export default class EmployeesServiceRest implements EmployeesService {
     private observable: Observable<Employee[] | string> | null = null;
+    private subscriber: Subscriber<string|Employee[]> | undefined;
     private cache: Cache = new Cache();
     constructor(private url: string) { }
-    async updateEmployee(empl: Employee): Promise<Employee> {
+
+        async updateEmployee(empl: Employee): Promise<Employee> {
         const response = await fetchRequest(this.getUrlWithId(empl.id!),
             { method: 'PUT' }, empl);
+            this.sibscriberNext(this.url, this.subscriber!)
 
         return await response.json();
 
@@ -99,13 +102,14 @@ export default class EmployeesServiceRest implements EmployeesService {
             const response = await fetchRequest(this.getUrlWithId(id), {
                 method: 'DELETE',
             });
-            return await response.json();
+            this.sibscriberNext(this.url, this.subscriber!)
     }
     getEmployees(): Observable<Employee[] | string> {
         let intervalId: any;
         if (!this.observable) {
             this.observable = new Observable<Employee[] | string>(subscriber => {
                 this.cache.reset();
+                this.subscriber = subscriber;
                 this.sibscriberNext(this.url, subscriber);
                 intervalId = setInterval(() => this.sibscriberNext(this.url, subscriber), POLLER_INTERVAL);
                 return () => clearInterval(intervalId)
@@ -118,7 +122,7 @@ export default class EmployeesServiceRest implements EmployeesService {
        
             const response = await fetchRequest(this.url, {
                 method: 'POST',
-               }, {...empl, userId: "admin"} as any)
+               }, empl)
            ;
            return response.json();
 
