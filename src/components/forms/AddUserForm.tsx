@@ -125,10 +125,6 @@ export const AddUserForm: React.FC<Props> = ({ submitFn, employeeUpdated }) => {
                 <Button type="submit" >Submit</Button>
                 <Button type="reset">Reset</Button>
             </Box>
-
-
-
         </form>
-       
     </Box>
 }

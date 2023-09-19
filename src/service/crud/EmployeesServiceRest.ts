@@ -2,25 +2,10 @@ import { Observable, Subscriber } from "rxjs";
 import Employee from "../../model/Employee";
 import { AUTH_DATA_JWT } from "./../auth/AuthServiceJwt";
 import EmployeesService from "./EmployeesService";
-const POLLER_INTERVAL = 3000;
-class Cache {
-    cacheString: string = '';
-    set(employees: Employee[]): void {
-        this.cacheString = JSON.stringify(employees);
-    }
-    reset() {
-        this.cacheString = ''
-    }
-    isEqual(employees: Employee[]): boolean {
-        return this.cacheString === JSON.stringify(employees)
-    }
-    getCache(): Employee[] {
-        return !this.isEmpty() ? JSON.parse(this.cacheString) : []
-    }
-    isEmpty(): boolean {
-        return this.cacheString.length === 0;
-    }
-}
+import { CompatClient, Stomp } from "@stomp/stompjs";
+
+const TOPIC = "/topic/employees"
+
 async function getResponseText(response: Response): Promise<string> {
     let res = '';
     if (!response.ok) {
@@ -48,7 +33,7 @@ async function fetchRequest(url: string, options: RequestInit, empl?: Employee):
     try {
         if (options.method == "DELETE" || options.method == "PUT") {
             flUpdate = false;
-            // await fetchRequest(url, {method: "GET"});
+            await fetchRequest(url, {method: "GET"});
             flUpdate = true;
         }
         console.log(options)
@@ -73,49 +58,60 @@ async function fetchAllEmployees(url: string):Promise< Employee[]|string> {
 export default class EmployeesServiceRest implements EmployeesService {
     private observable: Observable<Employee[] | string> | null = null;
     private subscriber: Subscriber<string|Employee[]> | undefined;
-    private cache: Cache = new Cache();
-    constructor(private url: string) { }
+    private urlService: string;
+    private urlWebsocket: string;
+    private stompClient: CompatClient| undefined;
+
+    constructor(private url: string) { 
+        this.urlService = `http://${url}/employees`;
+        this.urlWebsocket = `ws://${url}/websocket/employees`
+    }
 
         async updateEmployee(empl: Employee): Promise<Employee> {
         const response = await fetchRequest(this.getUrlWithId(empl.id!),
             { method: 'PUT' }, empl);
-            this.sibscriberNext(this.url, this.subscriber!)
-
         return await response.json();
 
     }
     private getUrlWithId(id: any): string {
-        return `${this.url}/${id}`;
+        return `${this.urlService}/${id}`;
     }
-    private sibscriberNext(url: string, subscriber: Subscriber<Employee[] | string>): void {
-        
-        fetchAllEmployees(url).then(employees => {
-            if (this.cache.isEmpty() || !this.cache.isEqual(employees as Employee[])) {
-                this.cache.set(employees as Employee[]);
-                subscriber.next(employees);
-            }
-            
+    private subscriberNext(): void {
+        fetchAllEmployees(this.urlService).then(employees => {
+                this.subscriber?.next(employees);
         })
-        .catch(error => subscriber.next(error));
+        .catch(error => this.subscriber?.next(error));
     }
     async deleteEmployee(id: any): Promise<void> {
             const response = await fetchRequest(this.getUrlWithId(id), {
                 method: 'DELETE',
             });
-            this.sibscriberNext(this.url, this.subscriber!)
     }
     getEmployees(): Observable<Employee[] | string> {
         let intervalId: any;
         if (!this.observable) {
             this.observable = new Observable<Employee[] | string>(subscriber => {
-                this.cache.reset();
                 this.subscriber = subscriber;
-                this.sibscriberNext(this.url, subscriber);
-                intervalId = setInterval(() => this.sibscriberNext(this.url, subscriber), POLLER_INTERVAL);
-                return () => clearInterval(intervalId)
+                this.subscriberNext();
+                this.connectWS();
+                return () => this.disconnectWS();
             })
         }
         return this.observable;
+    }
+    disconnectWS(): void {
+        this.stompClient?.disconnect();
+    }
+    connectWS() {
+        this.stompClient = Stomp.client(this.urlWebsocket);
+        this.stompClient.connect({}, () => {
+            this.stompClient?.subscribe(TOPIC, message => {
+                console.log(message.body);
+                this.subscriberNext();
+                
+            })
+        }, (error: any) => this.subscriber?.next(JSON.stringify(error)), 
+        () => console.log("Websocket disconnected"))
     }
        
     async addEmployee(empl: Employee): Promise<Employee> {

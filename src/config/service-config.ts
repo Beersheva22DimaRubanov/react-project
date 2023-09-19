@@ -8,4 +8,4 @@ import EmployeesServiceRest from "../service/crud/EmployeesServiceRest";
 
 export const authService: AuthService = new AuthServiceJwt('http://localhost:8080/login')
 
-export const employeesService: EmployeesService = new EmployeesServiceRest('http://localhost:8080/employees')
+export const employeesService: EmployeesService = new EmployeesServiceRest('localhost:8080')
