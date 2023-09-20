@@ -3,6 +3,7 @@ import { InputResult } from "../../model/InputResult";
 import { getRandomEmployee } from "../../util/random";
 import Input from "../common/Input";
 import employeeConfig from "../../config/employee-config.json"
+import Employee from "../../model/Employee";
 
 const GenerationPage: React.FC = () => {
     function submitFn(amount: string): InputResult{

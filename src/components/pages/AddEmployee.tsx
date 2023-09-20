@@ -1,5 +1,5 @@
 import { Container, Typography } from "@mui/material"
-import AddUserForm from "../forms/AddUserForm";
+import {EmployeeForm} from "../forms/AddUserForm";
 import UserData from "../../model/UserData";
 import { InputResult } from "../../model/InputResult";
 import Employee from "../../model/Employee";
@@ -8,32 +8,29 @@ import CodePayload from "../../model/CodePayload";
 import CodeType from "../../model/CodeType";
 import { useDispatch } from "react-redux";
 import { codeActions } from "../../redux/slices/codeSlice";
+import { useDispatchCode } from "../../config/hooks/hooks";
 
 const AddEmployee: React.FC = () => {
-    const dispatch = useDispatch()
+    const dispatch = useDispatchCode()
+    let successMessage: string = '';
+        let errorMessage = '';
     const codeAlert: CodePayload = {code: CodeType.OK, message: ''}
-    async function submitFn(data: Employee) {
-        const res = await employeesService.addEmployee(data);
-        if(typeof res === 'string'){
-        if(res.includes('Authentification')){
-            codeAlert.code = CodeType.AUTH_ERROR;
-            codeAlert.message = 'Authentification error:' + res
-        } else {
-            codeAlert.code = CodeType.SERVER_ERROR
-            codeAlert.message = "Server error: " + res
-        }
-           
-    } else {
-        codeAlert.message = `Emploee with id: ${res.id} added`
-    
-    }
-    dispatch(codeActions.set(codeAlert))
-    }
 
+    async function submitFn(empl: Employee): Promise<InputResult> {
+        const res: InputResult = {status: 'success', message: ''};
+        try {
+            const employee: Employee = await employeesService.addEmployee(empl);
+            successMessage = `employee with id: ${employee.id} has been added`
+        } catch (error: any) {
+           errorMessage = error;
+        }
+        dispatch(errorMessage, successMessage);
+        return res;
+    }
 
     return <Container>
         <Typography variant="h4" align="center">Add employee page</Typography>
-        <AddUserForm submitFn={submitFn} empl={null}></AddUserForm>
+        <EmployeeForm submitFn={submitFn}></EmployeeForm>
     </Container>
 }
 

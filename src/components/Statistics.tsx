@@ -29,7 +29,7 @@ const Statistics: React.FC<Props> = ({ employees, defaultInterval, field }) => {
         if(field === 'age'){
             const currentYear: number = new Date().getFullYear();
             array = employees.map(e=>{ 
-                return {'age': currentYear - +e.birthYear }
+                return {'age': currentYear - +e.birthDate}
             })
         }else{
             array = employees;

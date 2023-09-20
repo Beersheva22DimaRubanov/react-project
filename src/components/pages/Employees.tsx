@@ -1,148 +1,169 @@
-import { Alert, Box, Snackbar, Typography } from "@mui/material"
-import { useEffect, useRef, useState } from "react"
-import Employee from "../../model/Employee"
-import { authService, employeesService } from "../../config/service-config"
-import { DataGrid, GridActionsCellItem, GridColDef, GridRowParams } from "@mui/x-data-grid"
-import { useDispatch } from "react-redux"
-import { userActions } from "../../redux/slices/AuthSlice"
-import { StatusType } from "../../model/StatusType"
-import { useSelectorUser } from "../../redux/store"
-import UserData from "../../model/UserData"
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import Confirm from "../common/Confirm"
-import UpdateEmployee from "../UpdateEmployee"
-import { InputResult } from "../../model/InputResult"
-import CodeType from "../../model/CodeType"
-import CodePayload from "../../model/CodePayload"
-import { codeActions } from "../../redux/slices/codeSlice"
+import { Box,  Modal } from "@mui/material"
+import { useState, useEffect, useRef, useMemo } from "react";
+import Employee from "../../model/Employee";
+import { employeesService } from "../../config/service-config";
+import { Subscription } from 'rxjs';
+import { DataGrid, GridActionsCellItem, GridColDef } from "@mui/x-data-grid";
+
+import { Delete, Edit, Man, Woman } from "@mui/icons-material";
+import { useDispatchCode, useSelectorEmployees } from "../../config/hooks/hooks";
+import { InputResult } from "../../model/InputResult";
+import { EmployeeForm } from "../forms/AddUserForm";
+import {Confirm} from "../common/Confirm";
+import { useSelectorUser } from "../../redux/store";
+
+const columnsCommon: GridColDef[] = [
+    {
+        field: 'id', headerName: 'ID', flex: 0.5, headerClassName: 'data-grid-header',
+        align: 'center', headerAlign: 'center'
+    },
+    {
+        field: 'name', headerName: 'Name', flex: 0.7, headerClassName: 'data-grid-header',
+        align: 'center', headerAlign: 'center'
+    },
+    {
+        field: 'birthDate', headerName: "Date", flex: 0.8, type: 'date', headerClassName: 'data-grid-header',
+        align: 'center', headerAlign: 'center'
+    },
+    {
+        field: 'department', headerName: 'Department', flex: 0.8, headerClassName: 'data-grid-header',
+        align: 'center', headerAlign: 'center'
+    },
+    {
+        field: 'salary', headerName: 'Salary', type: 'number', flex: 0.6, headerClassName: 'data-grid-header',
+        align: 'center', headerAlign: 'center'
+    },
+    {
+        field: 'gender', headerName: 'Gender', flex: 0.6, headerClassName: 'data-grid-header',
+        align: 'center', headerAlign: 'center', renderCell: params => {
+            return params.value == "male" ? <Man/> : <Woman/>
+        }
+    },
+   ];
+   
+const style = {
+    position: 'absolute' as 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: 400,
+    bgcolor: 'background.paper',
+    border: '2px solid #000',
+    boxShadow: 24,
+    p: 4,
+};
 
 const Employees: React.FC = () => {
-    const [open, setOpen] = useState(false);
-    const[openModal, setOpenModal] = useState(false)
-    const emplId = useRef(0);
-    const currentEmpl = useRef<any>('');
-
-    const dispatch = useDispatch()
-    const [employees, setEmployees] = useState<Employee[]>([])
-    const currentUser = useSelectorUser()
-
-    function getColumns(currentUser: UserData) {
-        const columns: GridColDef[] = [
-            { field: 'id', headerName: 'ID', flex: 0.5 },
-            { field: 'name', headerName: 'Name', flex: 0.7 },
-            { field: 'birthYear', headerName: 'Birth year', flex: 0.7 },
-            { field: 'gender', headerName: 'Gender', flex: 0.6 },
-            { field: 'department', headerName: 'Department', flex: 0.8 },
-            { field: 'salary', headerName: 'Salary', flex: 0.6 }
-        ]
-
-        if (currentUser?.role === 'admin') {
-            columns.push(
-                {
-                    field: 'actions', headerName: 'ACTIONS', type: 'actions',
-                    getActions: (params: GridRowParams) => [
-                        <GridActionsCellItem onClick={() => {
-                            emplId.current = +params.id
-                            setOpen(true)
-                        }} icon={<DeleteIcon />} label="Delete" />,
-                        <GridActionsCellItem onClick ={()=>{
-                            const currentEmpl: Employee = params.row;
-                            updateUser(currentEmpl)
-                        }} icon={<EditIcon/>} label = 'Edit'/>
-                    ]
-                }
-            )
+    const columnsAdmin: GridColDef[] = [
+        {
+            field: 'actions', type: "actions", getActions: (params) => {
+                return [
+                    <GridActionsCellItem label="remove" icon={<Delete />}
+                        onClick={() => removeEmployee(params.id)
+                        } />,
+                    <GridActionsCellItem label="update" icon={<Edit />}
+                        onClick={() => {
+                            employeeId.current = params.id as any;
+                            if (params.row) {
+                                const empl = params.row;
+                                empl && (employee.current = empl);
+                                setFlEdit(true)
+                            }
+    
+                        }
+                        } />
+                ] ;
+            }
         }
-        return columns;
+       ]
+    const dispatch = useDispatchCode();
+    const userData = useSelectorUser();
+    const employees = useSelectorEmployees();
+    const columns = useMemo(() => getColumns(), [userData, employees]);
+
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [openEdit, setFlEdit] = useState(false);
+    const title = useRef('');
+    const content = useRef('');
+    const employeeId = useRef('');
+    const confirmFn = useRef<any>(null);
+    const employee = useRef<Employee | undefined>();
+    function getColumns(): GridColDef[] {
+        let res: GridColDef[] = columnsCommon;
+        if (userData && userData.role == 'admin') {
+            res = res.concat(columnsAdmin);
+        }
+        return res;
+    }
+    function removeEmployee(id: any) {
+        title.current = "Remove Employee object?";
+        const employee = employees.find(empl => empl.id == id);
+        content.current = `You are going remove employee with id ${employee?.id}`;
+        employeeId.current = id;
+        confirmFn.current = actualRemove;
+        setOpenConfirm(true);
+    }
+    async function actualRemove(isOk: boolean) {
+        let errorMessage: string = '';
+        if (isOk) {
+            try {
+                await employeesService.deleteEmployee(employeeId.current);
+            } catch (error: any) {
+                errorMessage = error;
+            }
+        }
+        dispatch(errorMessage, '');
+        setOpenConfirm(false);
+    }
+    function updateEmployee(empl: Employee): Promise<InputResult> {
+        setFlEdit(false)
+        const res: InputResult = { status: 'error', message: '' };
+        if (JSON.stringify(employee.current) != JSON.stringify(empl)) {
+            title.current = "Update Employee object?";
+            employee.current = empl;
+            content.current = `You are going update employee with id ${empl.id}`;
+            confirmFn.current = actualUpdate;
+            setOpenConfirm(true);
+        }
+        return Promise.resolve(res);
+    }
+    async function actualUpdate(isOk: boolean) {
+       
+        let errorMessage: string = '';
+
+        if (isOk) {
+            try {
+                await employeesService.updateEmployee(employee.current!);
+            } catch (error: any) {
+                errorMessage = error
+            }
+        }
+        dispatch(errorMessage, '');
+        setOpenConfirm(false);
+
     }
 
-    useEffect(() => {
-        const subsciption = employeesService.getEmployees().subscribe({
-            next(emplArray: Employee[] | string) {
-                let codeAlert: CodePayload = {code: CodeType.OK, message: ''} 
-                if (typeof emplArray === 'string') {
-                    if (emplArray.includes('Authentication')) {
-                        codeAlert.code = CodeType.AUTH_ERROR
-                        codeAlert.message = "Authentication error " + emplArray;
-                        dispatch(codeActions.set(codeAlert))
-
-                    } else {
-                        codeAlert.code = CodeType.SERVER_ERROR
-                        codeAlert.message = "Server error " + emplArray;
-                        dispatch(codeActions.set(codeAlert))
-                    }
-
-                } else {
-                    codeAlert.message = "Data uploaded"
-                    dispatch(codeActions.set(codeAlert))
-                    setEmployees(emplArray)
-                }
-            }
-        })
-      
-        return () => subsciption.unsubscribe()
-    }, [])
-
-    function updateUser(empl: Employee) {
-        setOpenModal(true);
-        currentEmpl.current = empl;
-     }
-
-     function handleCloseModal(){
-        setOpenModal(false)
-     }
-
-     async function submitFn(data: Employee) {
-        const codeAlert: CodePayload ={code: CodeType.OK, message: ''}
-        handleCloseModal()
-            const res = await employeesService.updateEmployee(currentEmpl.current.id, data)
-            if(typeof res === 'string'){
-            if(res.includes('Authentification')){
-                codeAlert.code = CodeType.AUTH_ERROR;
-                codeAlert.message = 'Authentification error:' + res
-            } else {
-                codeAlert.code = CodeType.SERVER_ERROR
-                codeAlert.message = "Server error: " + res
-            }
-               
-        } else {
-            codeAlert.message = `Emploee with id: ${res.id} updated`
-        
-        }
-        dispatch(codeActions.set(codeAlert))
-    }
-     
-    async function closeConfirm(isAgree: boolean) {
-        const codeAlert: CodePayload ={code: CodeType.OK, message: ''}
-        setOpen(false)
-        if (isAgree) {
-           const res = await employeesService.deleteEmployee(emplId.current);
-           if(typeof res === 'string'){
-            if(res.includes ('Authentification')){
-                codeAlert.code = CodeType.AUTH_ERROR;
-                codeAlert.message = 'Authentification error:' + res
-            } else {
-                codeAlert.code = CodeType.SERVER_ERROR
-                codeAlert.message = "Server error: " + res
-            }
-               
-        } else {
-            codeAlert.message = `Emploee with id: ${currentEmpl.current} deleted`
-        
-        }
-        dispatch(codeActions.set(codeAlert))
-        }
-    }
-
-    return <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <Box sx={{ height: '50vh', width: '80vw' }}>
-            <DataGrid columns={getColumns(currentUser)} rows={employees} />
+    return <Box sx={{
+        display: 'flex', justifyContent: 'center',
+        alignContent: 'center'
+    }}>
+        <Box sx={{ height: '80vh', width: '95vw' }}>
+            <DataGrid columns={columns} rows={employees} />
         </Box>
-        <UpdateEmployee  open={openModal} handleClose={handleCloseModal} employee ={currentEmpl.current} submitFn={submitFn}></UpdateEmployee>
-        <Confirm message={"Delete user with id " + emplId.current}    open={open} title="Delete" handleClose={closeConfirm}/>
+        <Confirm confirmFn={confirmFn.current} open={openConfirm}
+            title={title.current} content={content.current}></Confirm>
+        <Modal
+            open={openEdit}
+            onClose={() => setFlEdit(false)}
+            aria-labelledby="modal-modal-title"
+            aria-describedby="modal-modal-description"
+        >
+            <Box sx={style}>
+                <EmployeeForm submitFn={updateEmployee} employeeUpdated={employee.current} />
+            </Box>
+        </Modal>
+
+
     </Box>
 }
-
-export default Employees
-
+export default Employees;

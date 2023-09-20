@@ -2,167 +2,132 @@ import { Observable, Subscriber } from "rxjs";
 import Employee from "../model/Employee";
 import { AUTH_DATA_JWT } from "./AuthServiceJwt";
 import EmployeesService from "./EmployeesService";
-import { error } from "console";
-import { TableBody } from "@mui/material";
-
-const POLLER_INTERVAL = 2000;
-
+const POLLER_INTERVAL = 30000
 class Cache {
     cacheString: string = '';
-    setCache(employees: Employee[]): void{
-        this.cacheString = JSON.stringify(employees)
+    set(employees: Employee[]): void {
+        this.cacheString = JSON.stringify(employees);
     }
-    reset(): void {
+    reset() {
         this.cacheString = ''
     }
-    isEqual(employees: Employee[]): boolean{
-        return this.cacheString == JSON.stringify(employees)
+    isEqual(employees: Employee[]): boolean {
+        return this.cacheString === JSON.stringify(employees)
     }
-
-    getCache(): Employee[]{
+    getCache(): Employee[] {
         return !this.isEmpty() ? JSON.parse(this.cacheString) : []
     }
-
-    isEmpty(): boolean{
-        return this.cacheString.length === 0
+    isEmpty(): boolean {
+        return this.cacheString.length === 0;
     }
+}
+async function getResponseText(response: Response): Promise<string> {
+    let res = '';
+    if (!response.ok) {
+        const { status } = response;
+        res = status == 401 || status == 403 ? 'Authentication' : await response.text();
+    }
+    return res;
+
+}
+function getHeaders(): HeadersInit {
+    const res: HeadersInit = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem(AUTH_DATA_JWT) || ''}`
+    }
+    return res;
+}
+async function fetchRequest(url: string, options: RequestInit, empl?: Employee): Promise<Response> {
+    options.headers = getHeaders();
+    if (empl) {
+        options.body = JSON.stringify(empl);
+    }
+
+    let flUpdate = true;
+    let responseText = '';
+    try {
+        if (options.method == "DELETE" || options.method == "PUT") {
+            flUpdate = false;
+            await fetchRequest(url, {method: "GET"});
+            flUpdate = true;
+        }
+
+        const response = await fetch(url, options);
+        responseText = await getResponseText(response);
+        if (responseText) {
+            throw responseText;
+        }
+        return response;
+    } catch (error: any) {
+        if (!flUpdate) {
+            throw error;
+        }
+        throw responseText ? responseText : "Server is unavailable. Repeat later on";
+    }
+}
+async function fetchAllEmployees(url: string):Promise< Employee[]|string> {
+    const response = await fetchRequest(url, {});
+    return await response.json()
 }
 
 export default class EmployeesServiceRest implements EmployeesService {
     private observable: Observable<Employee[] | string> | null = null;
-    private cache: Cache = new Cache;
+    private cache: Cache = new Cache();
+    private subscriber: Subscriber<string|Employee[]> | undefined;
     constructor(private url: string) { }
-    
-    async updateEmployee(id: any, empl: Employee): Promise<Employee| string> {
-        let responseText = '';
-        console.log (this.url +' /' + id)
-        try {
-            const response = await fetch(this.url +'/' + id, {
-                method: "PUT",
-                headers: {
-                    'Content-type': 'application/json',
-                    Authorization: 'Bearer ' + localStorage.getItem(AUTH_DATA_JWT)
-                },
-                body: JSON.stringify({...empl, userId: 'admin'})
-                
-            });
-            if (!response.ok) {
-                const { status, statusText } = response;
-                responseText = status == 401 || status == 403 ? 'Authentication' : statusText;
-                throw responseText;
-            }
-            return await response.json();
-        } catch (error: any) {
+    async updateEmployee(empl: Employee): Promise<Employee> {
+        const response = await fetchRequest(this.getUrlWithId(empl.id!),
+            { method: 'PUT' }, empl);
+            this.sibscriberNext(this.url, this.subscriber!);
+        return await response.json();
 
-            throw responseText ? responseText : "Server is unavailable. Repeat later on";
+    }
+    private getUrlWithId(id: any): string {
+        return `${this.url}/${id}`;
+    }
+    private sibscriberNext(url: string, subscriber: Subscriber<Employee[] | string>): void {
         
-        }
+        fetchAllEmployees(url).then(employees => {
+            if (this.cache.isEmpty() || !this.cache.isEqual(employees as Employee[])) {
+                this.cache.set(employees as Employee[]);
+                subscriber.next(employees);
+            }
+            
+        })
+        .catch(error => subscriber.next(error));
     }
-
-    async deleteEmployee(id: any): Promise<void| string> {
-        let responseText = ''
-        try{
-            const response = await fetch(this.url + '/' + id, {
+    async deleteEmployee(id: any): Promise<void> {
+            const response = await fetchRequest(this.getUrlWithId(id), {
                 method: 'DELETE',
-                headers: {
-                    'Content-type': 'application/json',
-                    Authorization: 'Bearer ' + localStorage.getItem(AUTH_DATA_JWT) || ''
-                },
-            })
-            if(!response.ok){
-                const{status, statusText} = response;
-                responseText = status == 401 || status == 403 ? 'Authentication': statusText
-                throw responseText
-            }
-            return await response.json()
-        } catch(error: any){
-            throw responseText ? responseText : 'Server is unavailable.'
-        }
-    }
-
-    
-    async addEmployee(empl: Employee): Promise<Employee| string> {
-        let responseText = '';
-        try {
-            const response = await fetch(this.url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem(AUTH_DATA_JWT)}`
-                },
-                body: JSON.stringify({ ...empl, userId: 'admin' })
             });
-            if (!response.ok) {
-                const { status, statusText } = response;
-                responseText = status == 401 || status == 403 ? 'Authentication' : statusText;
-                throw responseText;
-            }
-            return await response.json();
-        } catch (error: any) {
-
-            throw responseText ? responseText : "Server is unavailable. Repeat later on";
-        }
+            this.sibscriberNext(this.url, this.subscriber!);
+           
     }
-
     getEmployees(): Observable<Employee[] | string> {
-        if(this.observable == null){
-            this.observable = new Observable<Employee[] | string> ((subscriber) =>{
-                if(this.cache.isEmpty()){
-                    this.putEmploeesToCash(subscriber)
-                } else{
-                    const employees = this.cache.getCache()
-                    subscriber.next(employees)
-                }
+        let intervalId: any;
+        if (!this.observable) {
+            this.observable = new Observable<Employee[] | string>(subscriber => {
+                this.cache.reset();
 
-               const interval =  setInterval(()=>{
-                    this.putEmploeesToCash(subscriber)
-                }, POLLER_INTERVAL);
-                return () => clearInterval(interval)
-
+                this.sibscriberNext(this.url, subscriber);
+                this.subscriber = subscriber;
+                intervalId = setInterval(() => this.sibscriberNext(this.url, subscriber), POLLER_INTERVAL);
+                return () => clearInterval(intervalId)
             })
         }
         return this.observable;
     }
-
-    private async putEmploeesToCash(subscriber: Subscriber<Employee[] | string>){
-        let responseText = '';
-        try {
-            const response = await fetch(this.url, {
-            method: 'GET',
-            headers: { Authorization: 'Bearer ' + localStorage.getItem(AUTH_DATA_JWT) }
-            });
-            if (!response.ok) {
-                const { status, statusText } = response;
-                responseText = status == 401 || status == 403 ? 'Authentication' : statusText;
-                throw responseText;
+       
+    async addEmployee(empl: Employee): Promise<Employee> {
+            if(empl.id == 0) {
+                delete empl.id
             }
-            const employees : Employee[] = await response.json();
-                if(!this.cache.isEqual(employees)){
-                    this.cache.setCache(employees)
-                    subscriber.next(employees)
-                }
-        } catch (error: any) {
-            // throw responseText ? responseText : "Server is unavailable. Repeat later on";
-            subscriber.next(error)
-        }
+            const response = await fetchRequest(this.url, {
+                method: 'POST',
+               }, empl)
+           ;
+           return response.json();
 
-
-        // const response =  await fetch(this.url, {
-        //     headers: { Authorization: 'Bearer ' + localStorage.getItem(AUTH_DATA_JWT) }
-        // })
-        //     let res: Promise<Employee[] | string>;
-        //     if (response.ok) {
-        //        const employees : Employee[] = await response.json();
-        //         if(!this.cache.isEqual(employees)){
-        //             this.cache.setCache(employees)
-        //             subscriber.next(employees)
-        //         }
-        //     } else {
-        //         res = Promise.resolve(response.status == 401 || response.status == 403 ?
-        //             'Authentication' : response.statusText)
-        //         subscriber.next(await res)
-        //     }
-        
     }
 
 }
